@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>mapshot</title>
+        <script type="text/javascript" src="modestmaps.js"></script>
+        <script type="text/javascript">
+        window.onload = function() {
+            // the map
+            var layer = new MM.TemplatedLayer("http://a.tile.openstreetmap.org/{Z}/{X}/{Y}.png");
+            map = new MM.Map("map", layer).zoom(3);
+            hash = new MM.Hash(map);
+
+            document.getElementById('take').onclick = function() {
+                var osmTileProvider = new MM.TemplatedMapProvider("http://a.tile.openstreetmap.org/{Z}/{X}/{Y}.png?cache=" + (new Date()));
+                var mapboxTileProvider = new MM.TemplatedMapProvider("http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png?cache=" + (new Date()));
+
+                var dimensions = map.dimensions,
+                    location = map.center(),
+                    zoom = map.zoom();
+
+                var c = document.createElement('canvas');
+                c.width = 640;
+                c.height = 480;
+                ctx = c.getContext('2d');
+
+                var mc = document.createElement('canvas');
+                mc.width = 640;
+                mc.height = 480;
+                mctx = mc.getContext('2d');
+
+                projection = new MM.MercatorProjection(0, MM.deriveTransformation(
+                  -Math.PI,  Math.PI, 0, 0,
+                  Math.PI, Math.PI, 1, 0,
+                  -Math.PI, -Math.PI, 0, 1)),
+                tileSize = new MM.Point(256, 256),
+                centerCoordinate = projection.locationCoordinate(location).zoomTo(zoom);
+
+                function pointCoordinate(point) {
+                    var coord = centerCoordinate.copy();
+                    coord.column += (point.x - dimensions.x / 2) / tileSize.x;
+                    coord.row += (point.y - dimensions.y / 2) / tileSize.y;
+                    return coord;
+                }
+
+                function coordinatePoint(coord) {
+                    // Return an x, y point on the map image for a given coordinate.
+                    if (coord.zoom != zoom) coord = coord.zoomTo(zoom);
+                    return new MM.Point(
+                        dimensions.x / 2 + tileSize.x * (coord.column - centerCoordinate.column),
+                        dimensions.y / 2 + tileSize.y * (coord.row - centerCoordinate.row)
+                    );
+                }
+
+                var startCoord = pointCoordinate(new MM.Point(0, 0)).container(),
+                    endCoord = pointCoordinate(dimensions).container();
+
+                var todo = (endCoord.column - startCoord.column + 1) *
+                    (endCoord.row - startCoord.row + 1);
+                var mtodo = (endCoord.column - startCoord.column + 1) *
+                    (endCoord.row - startCoord.row + 1);
+                for (var column = startCoord.column; column <= endCoord.column; column++) {
+                    for (var row = startCoord.row; row <= endCoord.row; row++) {
+                        var coord = new MM.Coordinate(row, column, zoom);
+                        var p = coordinatePoint(coord);
+                        var img = new Image();
+                        img.crossOrigin = '';
+                        img.src = osmTileProvider.getTile(coord);
+                        img.onload = (function(p, img) {
+                            return function() {
+                                ctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
+                                if (--todo == 0) {
+                                    document.getElementById('osm').src = c.toDataURL();
+                                }
+                            }
+                        })(p, img);
+
+                        var mimg = new Image();
+                        mimg.crossOrigin = '';
+                        mimg.src = mapboxTileProvider.getTile(coord);
+                        mimg.onload = (function(p, img) {
+                            return function() {
+                                mctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
+                                if (--mtodo == 0) {
+                                   document.getElementById('mapbox').src = mc.toDataURL();
+                                }
+                            }
+                        })(p, mimg);
+                    }
+                }
+            }
+        }
+
+        </script>
+
+        <style type="text/css">
+            body {
+                margin: 0;
+                font:12px/20px 'Helvetica Neue';
+            }
+
+            #map {
+              margin:20px auto;
+              width: 640px;
+              height: 480px;
+              border:1px solid #000;
+            }
+            #control {
+              width: 640px;
+              margin:20px auto;
+            }
+
+            #take {
+              font:18px/30px 'Helvetica Neue';
+              width:640px;
+              margin:10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='map'></div>
+        <div id='control'>
+        <button id='take'>take</button>
+        <img src='' id='osm' />
+        <img src='' id='mapbox' />
+        </div>
+    </body>
+</html>
