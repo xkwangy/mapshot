@@ -7,7 +7,7 @@
         window.onload = function() {
             // the map
             var layer = new MM.TemplatedLayer("http://a.tile.openstreetmap.org/{Z}/{X}/{Y}.png");
-            map = new MM.Map("map", layer).zoom(3);
+            map = new MM.Map("map", layer);
             hash = new MM.Hash(map);
 
             document.getElementById('take').onclick = function() {
