@@ -67,7 +67,7 @@
                         img.src = osmTileProvider.getTile(coord);
                         img.onload = (function(p, img) {
                             return function() {
-                                ctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
+                                ctx.drawImage(img, ~~p.x, ~~p.y, tileSize.x, tileSize.y);
                                 if (--todo == 0) {
                                     document.getElementById('osm').src = c.toDataURL();
                                 }
@@ -79,7 +79,7 @@
                         mimg.src = mapboxTileProvider.getTile(coord);
                         mimg.onload = (function(p, img) {
                             return function() {
-                                mctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
+                                mctx.drawImage(img, ~~p.x, ~~p.y, tileSize.x, tileSize.y);
                                 if (--mtodo == 0) {
                                    document.getElementById('mapbox').src = mc.toDataURL();
                                 }
