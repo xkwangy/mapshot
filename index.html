@@ -13,7 +13,8 @@
             document.getElementById('take').onclick = function() {
                 var osmTileProvider = new MM.TemplatedMapProvider("http://a.tile.openstreetmap.org/{Z}/{X}/{Y}.png?cache=" + (new Date()));
                 var mapboxTileProvider = new MM.TemplatedMapProvider("http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{Z}/{X}/{Y}.png?cache=" + (new Date()));
-
+                var BADTileProvider = new MM.TemplatedMapProvider("http://tile2.poole.ch/gone/{Z}/{X}/{Y}.png?cache=" + (new Date()));
+                
                 var dimensions = map.dimensions,
                     location = map.center(),
                     zoom = map.zoom();
@@ -28,6 +29,11 @@
                 mc.height = 480;
                 mctx = mc.getContext('2d');
 
+                var bc = document.createElement('canvas');
+                bc.width = 640;
+                bc.height = 480;
+                bctx = bc.getContext('2d');
+                
                 projection = new MM.MercatorProjection(0, MM.deriveTransformation(
                   -Math.PI,  Math.PI, 0, 0,
                   Math.PI, Math.PI, 1, 0,
@@ -56,7 +62,7 @@
 
                 var todo = (endCoord.column - startCoord.column + 1) *
                     (endCoord.row - startCoord.row + 1);
-                var mtodo = (endCoord.column - startCoord.column + 1) *
+                var mtodo = btodo = (endCoord.column - startCoord.column + 1) *
                     (endCoord.row - startCoord.row + 1);
                 for (var column = startCoord.column; column <= endCoord.column; column++) {
                     for (var row = startCoord.row; row <= endCoord.row; row++) {
@@ -82,6 +88,18 @@
                                 mctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
                                 if (--mtodo == 0) {
                                    document.getElementById('mapbox').src = mc.toDataURL();
+                                }
+                            }
+                        })(p, mimg);
+                         
+                        var bimg = new Image();
+                        bimg.crossOrigin = '';
+                        bimg.src = BADTileProvider.getTile(coord);
+                        bimg.onload = (function(p, img) {
+                            return function() {
+                                mctx.drawImage(img, p.x, p.y, tileSize.x, tileSize.y);
+                                if (--btodo == 0) {
+                                   document.getElementById('BAD').src = bc.toDataURL();
                                 }
                             }
                         })(p, mimg);
@@ -122,6 +140,7 @@
         <button id='take'>take</button>
         <img src='' id='osm' />
         <img src='' id='mapbox' />
+        <img src='' id='BAD' />
         </div>
     </body>
 </html>
